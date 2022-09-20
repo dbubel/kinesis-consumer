@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	rec "github.com/awslabs/kinesis-aggregation/go/records"
-	deagg "github.com/harlow/kinesis-consumer/internal/deaggregator"
+	deagg "github.com/dbubel/kinesis-consumer/internal/deaggregator"
 )
 
 // Generate an aggregate record in the correct AWS-specified format
