@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -35,11 +36,6 @@ func (u TimeFormatter) Format(e *logrus.Entry) ([]byte, error) {
 // New creates a kinesis consumer with default settings. Use Option to override
 // any of the optional attributes.
 func New(streamName string, opts ...Option) (*Consumer, error) {
-	log := logrus.New()
-	log.SetFormatter(TimeFormatter{Formatter: &logrus.JSONFormatter{}})
-	if streamName == "" {
-		return nil, errors.New("must provide stream name")
-	}
 
 	// new consumer with noop storage, counter, and logger
 	c := &Consumer{
@@ -47,7 +43,7 @@ func New(streamName string, opts ...Option) (*Consumer, error) {
 		initialShardIteratorType: types.ShardIteratorTypeLatest,
 		store:                    &noopStore{},
 		counter:                  &noopCounter{},
-		logger:                   log,
+		logger:                   &noopLogger{logrus.New()},
 		scanInterval:             250 * time.Millisecond,
 		maxRecords:               10000,
 	}
@@ -82,7 +78,7 @@ type Consumer struct {
 	client                   kinesisClient
 	counter                  Counter
 	group                    Group
-	logger                   *logrus.Logger
+	logger                   Logger
 	store                    Store
 	scanInterval             time.Duration
 	maxRecords               int64

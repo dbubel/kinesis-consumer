@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 
@@ -11,7 +10,7 @@ import (
 
 // NewAllGroup returns an intitialized AllGroup for consuming
 // all shards on a stream
-func NewAllGroup(ksis kinesisClient, store Store, streamName string, logger *logrus.Logger) *AllGroup {
+func NewAllGroup(ksis kinesisClient, store Store, streamName string, logger Logger) *AllGroup {
 	return &AllGroup{
 		ksis:       ksis,
 		shards:     make(map[string]types.Shard),
@@ -27,7 +26,7 @@ func NewAllGroup(ksis kinesisClient, store Store, streamName string, logger *log
 type AllGroup struct {
 	ksis       kinesisClient
 	streamName string
-	logger     *logrus.Logger
+	logger     Logger
 	Store
 
 	shardMu sync.Mutex

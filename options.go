@@ -1,7 +1,6 @@
 package consumer
 
 import (
-	"github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/kinesis/types"
@@ -25,7 +24,7 @@ func WithStore(store Store) Option {
 }
 
 // WithLogger overrides the default logger
-func WithLogger(logger *logrus.Logger) Option {
+func WithLogger(logger Logger) Option {
 	return func(c *Consumer) {
 		c.logger = logger
 	}
