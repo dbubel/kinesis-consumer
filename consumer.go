@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"sync"
 	"time"
 
@@ -14,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/kinesis"
 	"github.com/aws/aws-sdk-go-v2/service/kinesis/types"
 	"github.com/dbubel/kinesis-consumer/internal/deaggregator"
+	"github.com/sirupsen/logrus"
 )
 
 // Record wraps the record returned from the Kinesis library and
@@ -24,9 +23,20 @@ type Record struct {
 	MillisBehindLatest *int64
 }
 
+type TimeFormatter struct {
+	logrus.Formatter
+}
+
+func (u TimeFormatter) Format(e *logrus.Entry) ([]byte, error) {
+	e.Time = e.Time.In(time.Local)
+	return u.Formatter.Format(e)
+}
+
 // New creates a kinesis consumer with default settings. Use Option to override
 // any of the optional attributes.
 func New(streamName string, opts ...Option) (*Consumer, error) {
+	log := logrus.New()
+	log.SetFormatter(TimeFormatter{Formatter: &logrus.JSONFormatter{}})
 	if streamName == "" {
 		return nil, errors.New("must provide stream name")
 	}
@@ -37,11 +47,9 @@ func New(streamName string, opts ...Option) (*Consumer, error) {
 		initialShardIteratorType: types.ShardIteratorTypeLatest,
 		store:                    &noopStore{},
 		counter:                  &noopCounter{},
-		logger: &noopLogger{
-			logger: log.New(ioutil.Discard, "", log.LstdFlags),
-		},
-		scanInterval: 250 * time.Millisecond,
-		maxRecords:   10000,
+		logger:                   log,
+		scanInterval:             250 * time.Millisecond,
+		maxRecords:               10000,
 	}
 
 	// override defaults
@@ -74,7 +82,7 @@ type Consumer struct {
 	client                   kinesisClient
 	counter                  Counter
 	group                    Group
-	logger                   Logger
+	logger                   *logrus.Logger
 	store                    Store
 	scanInterval             time.Duration
 	maxRecords               int64
@@ -153,9 +161,9 @@ func (c *Consumer) ScanShard(ctx context.Context, shardID string, fn ScanFunc) e
 		return fmt.Errorf("get shard iterator error: %w", err)
 	}
 
-	c.logger.Log("[CONSUMER] start scan:", shardID, lastSeqNum)
+	c.logger.Debug("[CONSUMER] start scan:", shardID, lastSeqNum)
 	defer func() {
-		c.logger.Log("[CONSUMER] stop scan:", shardID)
+		c.logger.Debug("[CONSUMER] stop scan:", shardID)
 	}()
 
 	scanTicker := time.NewTicker(c.scanInterval)
@@ -169,7 +177,7 @@ func (c *Consumer) ScanShard(ctx context.Context, shardID string, fn ScanFunc) e
 
 		// attempt to recover from GetRecords error
 		if err != nil {
-			c.logger.Log("[CONSUMER] get records error:", err.Error())
+			c.logger.Debug("[CONSUMER] get records error:", err.Error())
 
 			if !isRetriableError(err) {
 				return fmt.Errorf("get records error: %v", err.Error())
@@ -215,7 +223,7 @@ func (c *Consumer) ScanShard(ctx context.Context, shardID string, fn ScanFunc) e
 			}
 
 			if isShardClosed(resp.NextShardIterator, shardIterator) {
-				c.logger.Log("[CONSUMER] shard closed:", shardID)
+				c.logger.Debug("[CONSUMER] shard closed:", shardID)
 
 				if c.shardClosedHandler != nil {
 					err := c.shardClosedHandler(c.streamName, shardID)
