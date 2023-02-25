@@ -75,7 +75,7 @@ type Consumer struct {
 	streamName               string
 	initialShardIteratorType types.ShardIteratorType
 	initialTimestamp         *time.Time
-	client                   kinesisClient
+	client                   *kinesis.Client
 	counter                  Counter
 	group                    Group
 	logger                   Logger

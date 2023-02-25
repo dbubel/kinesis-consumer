@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis"
 	"sync"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 
 // NewAllGroup returns an intitialized AllGroup for consuming
 // all shards on a stream
-func NewAllGroup(ksis kinesisClient, store Store, streamName string, logger Logger) *AllGroup {
+func NewAllGroup(ksis *kinesis.Client, store Store, streamName string, logger Logger) *AllGroup {
 	return &AllGroup{
 		ksis:       ksis,
 		shards:     make(map[string]types.Shard),
@@ -24,7 +25,7 @@ func NewAllGroup(ksis kinesisClient, store Store, streamName string, logger Logg
 // caches a local list of the shards we are already processing
 // and routinely polls the stream looking for new shards to process.
 type AllGroup struct {
-	ksis       kinesisClient
+	ksis       *kinesis.Client
 	streamName string
 	logger     Logger
 	Store
