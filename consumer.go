@@ -43,7 +43,7 @@ func New(streamName string, opts ...Option) (*Consumer, error) {
 		initialShardIteratorType: types.ShardIteratorTypeLatest,
 		store:                    &noopStore{},
 		counter:                  &noopCounter{},
-		logger:                   &noopLogger{logrus.New()},
+		logger:                   logrus.New(),
 		scanInterval:             250 * time.Millisecond,
 		maxRecords:               10000,
 	}
@@ -78,7 +78,7 @@ type Consumer struct {
 	client                   *kinesis.Client
 	counter                  Counter
 	group                    Group
-	logger                   Logger
+	logger                   *logrus.Logger
 	store                    Store
 	scanInterval             time.Duration
 	maxRecords               int64
